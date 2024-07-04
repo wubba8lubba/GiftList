@@ -1,17 +1,28 @@
-const axios = require('axios');
-const niceList = require('../utils/niceList.json');
-const MerkleTree = require('../utils/MerkleTree');
+const axios = require("axios");
+const niceList = require("../utils/niceList.json");
+const GiftConsensusProxy = require("../utils/giftConsensusProxy");
 
-const serverUrl = 'http://localhost:1225';
+const serverUrl = "http://localhost:1225";
+const proxy = new GiftConsensusProxy(niceList);
 
-async function main() {
-  // TODO: how do we prove to the server we're on the nice list? 
+const args = process.argv.slice(2);
 
-  const { data: gift } = await axios.post(`${serverUrl}/gift`, {
-    // TODO: add request body parameters here!
-  });
+async function getGift() {
+  if (args.length === 0) {
+    console.error("Please provide a name as a command-line argument.");
+    process.exit(1);
+  }
 
-  console.log({ gift });
+  const proof = proxy.getProofByName(args[0]);
+  try {
+    const { data: gift } = await axios.post(`${serverUrl}/gift`, {
+      name: args[0],
+      proof: proof,
+    });
+    console.log({ gift });
+  } catch (error) {
+    console.error("Error getting gift:", error);
+  }
 }
 
-main();
+getGift();
